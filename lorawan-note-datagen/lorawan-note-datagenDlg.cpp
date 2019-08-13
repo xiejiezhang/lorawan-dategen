@@ -38,6 +38,7 @@ ClorawannotedatagenDlg::ClorawannotedatagenDlg(CWnd* pParent /*=NULL*/)
 	, m_phyplayload(_T(""))
 	, m_phy_bytes(_T(""))
 	, m_hexshow(FALSE)
+	, m_isDownLinx(FALSE)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -65,12 +66,15 @@ void ClorawannotedatagenDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_Foptslen, m_optslenCtrl);
 	DDX_Text(pDX, IDC_bytes, m_phy_bytes);
 	DDX_Check(pDX, IDC_CHECK1, m_hexshow);
+	DDX_Control(pDX, IDC_STATIC_FCnt, m_fcnt_ctrl);
+	DDX_Check(pDX, IDC_CHECK2, m_isDownLinx);
 }
 
 BEGIN_MESSAGE_MAP(ClorawannotedatagenDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_GEN, &ClorawannotedatagenDlg::OnBnClickedGen)
+	ON_BN_CLICKED(IDC_CHECK2, &ClorawannotedatagenDlg::OnBnClickedCheck2)
 END_MESSAGE_MAP()
 
 
@@ -110,9 +114,9 @@ BOOL ClorawannotedatagenDlg::OnInitDialog()
 	m_optslenCtrl.SetCurSel(0);
 
 	UpdateData(TRUE);
-	m_nwkskey = "F2CF38D4026CC547B5D85F0D2CCD1AF3";
-	m_appskey = "B993D76F47B16EBB9946B4104C3D1A27";
-	m_devaddr = "26011D26";
+	m_nwkskey = "785f2467e8fbec2bdcb35fe8ae06701a";
+	m_appskey = "4dee9e9a1a984641944fffe2b83d164c";
+	m_devaddr = "00d96511";
 	m_fcntup  = "0";
 	m_fport   = "1";
 	UpdateData(FALSE);
@@ -307,6 +311,9 @@ void ClorawannotedatagenDlg::OnBnClickedGen()
 	TRACE("nwkskey= %S\n",m_nwkskey);
 	TRACE("appskey= %S\n",m_appskey);
 
+	len = strToHexBuf(m_opts, phyplayload.macplayload.fhdr.fopts);
+	ASSERT(len <= 15);
+
 	//mhdr
 	int msgtype = msgType2int(m_msgtype);
 	phyplayload.mType = msgtype;
@@ -364,7 +371,12 @@ void ClorawannotedatagenDlg::OnBnClickedGen()
 		TRACE("NWK_S_ENC_KEY set failed\n");
 	}
 
-	PayloadEncrypt(phyplayload.macplayload.playload, playloadlen, APP_S_KEY,  phyplayload.macplayload.fhdr.address, UP_LINK, phyplayload.macplayload.fhdr.fcnt);
+	PayloadEncrypt(phyplayload.macplayload.playload, 
+		playloadlen, 
+		APP_S_KEY,  
+		phyplayload.macplayload.fhdr.address,
+		m_isDownLinx?DOWN_LINK:UP_LINK,
+		phyplayload.macplayload.fhdr.fcnt);
 
 	CString strenplayload;
 	for (int n = 0; n <playloadlen; n++ ) {
@@ -385,7 +397,7 @@ void ClorawannotedatagenDlg::OnBnClickedGen()
 	//TRACE("MIC=%08X\n", phyplayload.cmac);
 
 	TRACE("****************************\n");
-
+	TRACE("DIR=%s\n",    m_isDownLinx?"DOWN_LINK":"UP_LINK");
 	TRACE("MHDR=%02X\n",    phyplayload.mhdr);
 	TRACE("DevAddr=%04X\n", phyplayload.macplayload.fhdr.address);
 	TRACE("Fctrl=%02X\n", phyplayload.macplayload.fhdr.fctrl);
@@ -432,7 +444,14 @@ void ClorawannotedatagenDlg::OnBnClickedGen()
 		n += playloadlen;
 	}
 
-	ComputeCmacB0(pphydata, n, F_NWK_S_INT_KEY, phyplayload.macplayload.fhdr.ack, UP_LINK,phyplayload.macplayload.fhdr.address, phyplayload.macplayload.fhdr.fcnt , &phyplayload.cmac);
+	ComputeCmacB0(pphydata, 
+		n, 
+		F_NWK_S_INT_KEY, 
+		phyplayload.macplayload.fhdr.ack,
+		m_isDownLinx?DOWN_LINK:UP_LINK,
+		phyplayload.macplayload.fhdr.address,
+		phyplayload.macplayload.fhdr.fcnt ,
+		&phyplayload.cmac);
 	TRACE("MIC=%08X\n", phyplayload.cmac);
 
 
@@ -459,4 +478,25 @@ void ClorawannotedatagenDlg::OnBnClickedGen()
 	UpdateData(FALSE);
 
 	free(pphydata);
+}
+
+
+void ClorawannotedatagenDlg::OnBnClickedRadio1()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	
+}
+
+
+void ClorawannotedatagenDlg::OnBnClickedCheck2()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData(TRUE);
+	if (m_isDownLinx) {
+		TRACE("选择下行数据计算\n");
+		m_fcnt_ctrl.SetWindowTextW(_T("下行链路计数(FCntDown)"));
+	} else {
+		TRACE("选择上行数据计算\n");
+		m_fcnt_ctrl.SetWindowTextW(_T("上行链路计数(FCntUp)"));
+	}
 }

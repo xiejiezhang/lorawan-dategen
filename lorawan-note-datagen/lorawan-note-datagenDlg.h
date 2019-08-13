@@ -109,4 +109,8 @@ public:
 	struct lorawan_phyplayload phyplayload;
 	CString m_phy_bytes;
 	BOOL m_hexshow;
+	afx_msg void OnBnClickedRadio1();
+	CStatic m_fcnt_ctrl;
+	BOOL m_isDownLinx;
+	afx_msg void OnBnClickedCheck2();
 };

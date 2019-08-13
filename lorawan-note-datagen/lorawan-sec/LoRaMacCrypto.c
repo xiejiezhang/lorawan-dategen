@@ -425,7 +425,13 @@ static LoRaMacCryptoStatus_t PrepareB0( uint16_t msgLen, KeyIdentifier_t keyID, 
         // confFCnt contains the frame counter value modulo 2^16 of the "confirmed" uplink or downlink frame that is being acknowledged
         uint16_t confFCnt = 0;
 
-        confFCnt = ( uint16_t )( CryptoCtx.NvmCtx->FCntList.FCntUp % 65536 );
+        //confFCnt = ( uint16_t )( CryptoCtx.NvmCtx->FCntList.FCntUp % 65536 );
+		if (fCnt == 0) {
+			confFCnt = ( uint16_t )( 0  % 65536 );	
+		} else {
+			confFCnt = ( uint16_t )( (fCnt-1) % 65536 );
+		}
+		
 
         b0[1] = confFCnt & 0xFF;
         b0[2] = ( confFCnt >> 8 ) & 0xFF;
